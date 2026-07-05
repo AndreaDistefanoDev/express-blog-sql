@@ -21,6 +21,14 @@ const show = (req, res) => {
     // prepare the query
     const sql = "SELECT * FROM posts WHERE id = ?";
 
+    // prepare the sql query to join post_tags
+    const sqlJoin = `SELECT p.*, GROUP_CONCAT(t.label) AS tags
+    FROM posts p
+    LEFT JOIN post_tag pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE p.id = ?
+    GROUP BY p.id`;
+
     //execute the query 
     connection.query(sql, [postId], (err, results) => {
         if (err) {
@@ -33,7 +41,25 @@ const show = (req, res) => {
         if (results.length === 0) {
             return res.status(404).json({ error: true, message: 'Post not found' });
         }
-        res.json(results[0]);
+
+        //execute the join query to get the tags for the post
+        connection.query(sqlJoin, [postId], (err, results) => {
+            if (err) {
+                console.error('Error executing query:', err);
+                return res.status(500).json({ error: true, message: 'Internal server error' });
+            }
+            // add the tags to the post object
+            if (results.length > 0) {
+                results[0].tags = results[0].tags ? results[0].tags.split(',') : [];
+            }
+
+            console.log('Query results:', results);
+
+            if (results.length === 0) {
+                return res.status(404).json({ error: true, message: 'Post not found' });
+            }
+            res.json(results[0]);
+        });
     });
 }
 
@@ -82,13 +108,23 @@ const destroy = (req, res) => {
     const postId = parseInt(req.params.id);
     const thisPost = posts.find(post => post.id === postId);
 
-    if (!thisPost) {
-        return res.status(404).json({ error: true, message: 'Post not found' });
-    }
+    // prepare the query
+    const sql = "DELETE FROM posts WHERE id = ?";
 
-    const postIndex = posts.indexOf(thisPost);
-    posts.splice(postIndex, 1);
-    res.json({ message: 'Post deleted successfully' });
+    //execute the query 
+    connection.query(sql, [postId], (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: true, message: 'Internal server error' });
+        }
+
+        console.log('Query results:', results);
+
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ error: true, message: 'Post not found' });
+        }
+        res.json({ message: 'Post deleted successfully' });
+    });
 }
 
 module.exports = {
