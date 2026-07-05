@@ -9,6 +9,7 @@ const index = (req, res) => {
             console.error('Error executing query:', err);
             return res.status(500).json({ error: true, message: 'Internal server error' });
         }
+        console.log('Query results:', results);
         res.json(results);
     });
 }
@@ -17,11 +18,23 @@ const show = (req, res) => {
     const postId = parseInt(req.params.id);
     const thisPost = posts.find(post => post.id === postId);
 
-    if (!thisPost) {
-        return res.status(404).json({ error: true, message: 'Post not found' });
-    }
+    // prepare the query
+    const sql = "SELECT * FROM posts WHERE id = ?";
 
-    res.json(thisPost);
+    //execute the query 
+    connection.query(sql, [postId], (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: true, message: 'Internal server error' });
+        }
+
+        console.log('Query results:', results);
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: true, message: 'Post not found' });
+        }
+        res.json(results[0]);
+    });
 }
 
 const store = (req, res) => {
