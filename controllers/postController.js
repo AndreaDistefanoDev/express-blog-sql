@@ -43,18 +43,17 @@ const show = (req, res) => {
         }
 
         //execute the join query to get the tags for the post
-        connection.query(sqlJoin, [postId], (err, results) => {
+        connection.query(sqlJoin, [postId], (err, tagResults) => {
             if (err) {
                 console.error('Error executing query:', err);
                 return res.status(500).json({ error: true, message: 'Internal server error' });
             }
             // add the tags to the post object
-            if (results.length > 0) {
-                results[0].tags = results[0].tags ? results[0].tags.split(',') : [];
+            if (tagResults.length > 0) {
+                tagResults[0].tags = tagResults[0].tags ? tagResults[0].tags.split(',') : [];
             }
 
-            console.log('Query results:', results);
-
+            console.log('Query results:', tagResults);
             if (results.length === 0) {
                 return res.status(404).json({ error: true, message: 'Post not found' });
             }
@@ -123,7 +122,7 @@ const destroy = (req, res) => {
         if (results.affectedRows === 0) {
             return res.status(404).json({ error: true, message: 'Post not found' });
         }
-        res.json({ message: 'Post deleted successfully' });
+        res.sendStatus(204); // No Content
     });
 }
 
