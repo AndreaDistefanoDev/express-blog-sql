@@ -1,16 +1,16 @@
 const posts = require('../data/posts');
+const connection = require('../database/connection');
 
 const index = (req, res) => {
-    const tag = req.query.tag;
+    const sql = "SELECT * FROM posts";
 
-    if (tag) {
-
-        const filteredPosts = posts.filter(post =>
-            post.tags.map(tag => tag.toLowerCase()).includes(tag.toLowerCase())
-        );
-        return res.json(filteredPosts);
-    }
-    res.json(posts);
+    connection.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: true, message: 'Internal server error' });
+        }
+        res.json(results);
+    });
 }
 
 const show = (req, res) => {
